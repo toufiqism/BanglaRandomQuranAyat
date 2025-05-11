@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.toufiq.banglaayat.data.model.QuranResponse
+import com.toufiq.banglaayat.ui.surah.SurahScreen
 import com.toufiq.banglaayat.ui.viewmodel.QuranUiState
 import com.toufiq.banglaayat.ui.viewmodel.QuranViewModel
 import kotlin.random.Random
@@ -31,7 +33,8 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuranScreen(
-    viewModel: QuranViewModel = hiltViewModel()
+    viewModel: QuranViewModel = hiltViewModel(),
+    onNavigateToSurah: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -103,7 +106,10 @@ fun QuranScreen(
                 LaunchedEffect(data) {
                     isRefreshing = false
                 }
-                QuranContent(data = data)
+                QuranContent(
+                    data = data,
+                    onSurahClick = onNavigateToSurah
+                )
             }
             is QuranUiState.Error -> {
                 val message = (uiState as QuranUiState.Error).message
@@ -160,7 +166,10 @@ fun QuranScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuranContent(data: QuranResponse) {
+fun QuranContent(
+    data: QuranResponse,
+    onSurahClick: (Int) -> Unit
+) {
     val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
 
@@ -182,17 +191,20 @@ fun QuranContent(data: QuranResponse) {
                 Text(
                     text = data.surahName,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onSurahClick(data.surahNo) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = data.surahNameArabic,
-                    fontSize = 20.sp
+                    fontSize = 20.sp,
+                    modifier = Modifier.clickable { onSurahClick(data.surahNo) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = data.surahNameArabicLong,
-                    fontSize = 18.sp
+                    fontSize = 18.sp,
+                    modifier = Modifier.clickable { onSurahClick(data.surahNo) }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }

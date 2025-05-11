@@ -6,8 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.toufiq.banglaayat.ui.screen.QuranScreen
+import com.toufiq.banglaayat.ui.surah.SurahScreen
 import com.toufiq.banglaayat.ui.theme.BanglaRandomQuranAyatTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -21,7 +22,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    QuranScreen()
+                    var currentSurahNumber by remember { mutableStateOf(1) }
+                    SurahScreen(
+                        surahNumber = currentSurahNumber,
+                        onRandomSurah = { currentSurahNumber = it }
+                    )
                 }
             }
         }
