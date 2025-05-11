@@ -2,6 +2,13 @@ package com.toufiq.banglaayat.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// Blue-Gray Custom Palette
+val BlueGrayLightest = Color(0xFFDBDEE8)
+val BlueGrayLighter  = Color(0xFFBFD3DF)
+val BlueGrayLight    = Color(0xFFB3DDDB)
+val BlueGrayMedium   = Color(0xFF92B3A7)
+val BlueGrayDark     = Color(0xFF6B7E80)
+
 // Vibrant Green Theme
 val md_theme_light_primary = Color(0xFF00A86B)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
