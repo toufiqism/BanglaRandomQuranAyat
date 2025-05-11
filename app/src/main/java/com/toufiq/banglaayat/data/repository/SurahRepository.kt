@@ -1,20 +1,16 @@
 package com.toufiq.banglaayat.data.repository
 
 import com.toufiq.banglaayat.data.model.Surah
-import retrofit2.http.GET
-import retrofit2.http.Path
+import com.toufiq.banglaayat.data.remote.QuranApiService
+import javax.inject.Inject
 
-interface SurahApi {
-    @GET("api/{surahNumber}.json")
-    suspend fun getSurah(@Path("surahNumber") surahNumber: Int): Surah
-}
 
 interface SurahRepository {
     suspend fun getSurah(surahNumber: Int): Result<Surah>
 }
 
-class SurahRepositoryImpl(
-    private val api: SurahApi
+class SurahRepositoryImpl @Inject constructor(
+    private val api: QuranApiService
 ) : SurahRepository {
     override suspend fun getSurah(surahNumber: Int): Result<Surah> = try {
         if (surahNumber in 1..114) {

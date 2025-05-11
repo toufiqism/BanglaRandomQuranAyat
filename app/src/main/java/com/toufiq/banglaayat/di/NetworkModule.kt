@@ -1,7 +1,6 @@
 package com.toufiq.banglaayat.di
 
 import com.toufiq.banglaayat.data.remote.QuranApiService
-import com.toufiq.banglaayat.data.repository.SurahApi
 import com.toufiq.banglaayat.data.repository.SurahRepository
 import com.toufiq.banglaayat.data.repository.SurahRepositoryImpl
 import dagger.Module
@@ -44,15 +43,10 @@ object NetworkModule {
         return retrofit.create(QuranApiService::class.java)
     }
 
-    @Provides
-    @Singleton
-    fun provideSurahApi(retrofit: Retrofit): SurahApi {
-        return retrofit.create(SurahApi::class.java)
-    }
 
     @Provides
     @Singleton
-    fun provideSurahRepository(api: SurahApi): SurahRepository {
+    fun provideSurahRepository(api: QuranApiService): SurahRepository {
         return SurahRepositoryImpl(api)
     }
 } 
