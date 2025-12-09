@@ -1,5 +1,7 @@
 package com.toufiq.banglaayat.data.repository
 
+import com.toufiq.banglaayat.data.common.Result
+import com.toufiq.banglaayat.data.common.toNetworkError
 import com.toufiq.banglaayat.data.model.QuranResponse
 import com.toufiq.banglaayat.data.remote.QuranApiService
 import javax.inject.Inject
@@ -14,7 +16,7 @@ class QuranRepository @Inject constructor(
             val response = apiService.getQuranAyah(surah, ayah)
             Result.success(response)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.error(e.toNetworkError())
         }
     }
 } 

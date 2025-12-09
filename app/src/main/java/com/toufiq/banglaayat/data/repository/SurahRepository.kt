@@ -1,5 +1,7 @@
 package com.toufiq.banglaayat.data.repository
 
+import com.toufiq.banglaayat.data.common.Result
+import com.toufiq.banglaayat.data.common.toNetworkError
 import com.toufiq.banglaayat.data.model.Surah
 import com.toufiq.banglaayat.data.remote.QuranApiService
 import javax.inject.Inject
@@ -16,9 +18,9 @@ class SurahRepositoryImpl @Inject constructor(
         if (surahNumber in 1..114) {
             Result.success(api.getSurah(surahNumber))
         } else {
-            Result.failure(IllegalArgumentException("Surah number must be between 1 and 114"))
+            Result.error(IllegalArgumentException("Surah number must be between 1 and 114"))
         }
     } catch (e: Exception) {
-        Result.failure(e)
+        Result.error(e.toNetworkError())
     }
 } 

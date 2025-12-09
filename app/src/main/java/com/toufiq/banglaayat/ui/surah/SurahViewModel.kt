@@ -2,6 +2,7 @@ package com.toufiq.banglaayat.ui.surah
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.toufiq.banglaayat.data.common.Result
 import com.toufiq.banglaayat.data.model.Surah
 import com.toufiq.banglaayat.data.repository.SurahRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,18 +31,11 @@ class SurahViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
-            repository.getSurah(surahNumber)
-                .onSuccess { surah ->
-                    _uiState.update { it.copy(isLoading = false, surah = surah) }
-                }
-                .onFailure { error ->
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            error = error.message ?: "Failed to load Surah"
-                        )
-                    }
-                }
+            when (val result = repository.getSurah(surahNumber)) {
+                is Result.Success -> _uiState.update { it.copy(isLoading = false, surah = result.data) }
+                is Result.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
+                is Result.Loading -> { /* Already handled above */ }
+            }
         }
     }
 } 

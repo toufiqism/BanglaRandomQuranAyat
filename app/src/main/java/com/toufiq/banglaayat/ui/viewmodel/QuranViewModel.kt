@@ -2,6 +2,7 @@ package com.toufiq.banglaayat.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.toufiq.banglaayat.data.common.Result
 import com.toufiq.banglaayat.data.model.QuranResponse
 import com.toufiq.banglaayat.data.repository.QuranRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,13 +23,11 @@ class QuranViewModel @Inject constructor(
     fun loadQuranAyah(surah: Int, ayah: Int) {
         viewModelScope.launch {
             _uiState.value = QuranUiState.Loading
-            repository.getQuranAyah(surah, ayah)
-                .onSuccess { response ->
-                    _uiState.value = QuranUiState.Success(response)
-                }
-                .onFailure { error ->
-                    _uiState.value = QuranUiState.Error(error.message ?: "Unknown error occurred")
-                }
+            when (val result = repository.getQuranAyah(surah, ayah)) {
+                is Result.Success -> _uiState.value = QuranUiState.Success(result.data)
+                is Result.Error -> _uiState.value = QuranUiState.Error(result.message)
+                is Result.Loading -> _uiState.value = QuranUiState.Loading
+            }
         }
     }
 }
