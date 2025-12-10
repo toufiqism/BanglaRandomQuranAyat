@@ -1,5 +1,8 @@
 package com.toufiq.banglaayat.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class Surah(
     val surahName: String,
     val surahNameArabic: String,

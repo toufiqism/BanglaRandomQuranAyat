@@ -1,5 +1,8 @@
 package com.toufiq.banglaayat.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class QuranResponse(
     val surahName: String,
     val surahNameArabic: String,
@@ -17,6 +20,7 @@ data class QuranResponse(
     val urdu: String
 )
 
+@Immutable
 data class AudioReciter(
     val reciter: String,
     val url: String,

@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,22 +14,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.toufiq.banglaayat.data.model.AudioReciter
 import com.toufiq.banglaayat.data.model.Surah
 import kotlinx.coroutines.launch
 import kotlin.random.Random
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.animation.core.animateFloatAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,53 +36,25 @@ fun SurahScreen(
     onRandomSurah: (Int) -> Unit,
     viewModel: SurahViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var isRefreshing by remember { mutableStateOf(false) }
     var isAudioSectionExpanded by remember { mutableStateOf(false) }
     var showSurahSelector by remember { mutableStateOf(false) }
-    
-    // Fix animation parameters
-    val infiniteTransition = rememberInfiniteTransition(label = "refresh")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation"
-    )
 
-    // Use LaunchedEffect with key to prevent unnecessary recompositions
     LaunchedEffect(surahNumber) {
         viewModel.loadSurah(surahNumber)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Quran Surah") },
-                actions = {
-                    // Surah Selector Button
-                    IconButton(onClick = { showSurahSelector = true }) {
-                        Icon(
-                            imageVector = Icons.Default.List,
-                            contentDescription = "Select Surah"
-                        )
-                    }
-                    // Random Surah Button
-                    IconButton(
-                        onClick = {
-                            isRefreshing = true
-                            val randomSurah = Random.nextInt(1, 115)
-                            onRandomSurah(randomSurah)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Random Surah",
-                            modifier = Modifier.rotate(if (isRefreshing) rotation else 0f)
-                        )
+            SurahTopBar(
+                isRefreshing = isRefreshing,
+                onSurahSelectorClick = remember { { showSurahSelector = true } },
+                onRandomClick = remember(onRandomSurah) {
+                    {
+                        isRefreshing = true
+                        val randomSurah = Random.nextInt(1, 115)
+                        onRandomSurah(randomSurah)
                     }
                 }
             )
@@ -103,10 +74,12 @@ fun SurahScreen(
                 uiState.error != null -> {
                     ErrorContent(
                         error = uiState.error!!,
-                        onRetry = {
-                            isRefreshing = true
-                            val randomSurah = Random.nextInt(1, 115)
-                            onRandomSurah(randomSurah)
+                        onRetry = remember(onRandomSurah) {
+                            {
+                                isRefreshing = true
+                                val randomSurah = Random.nextInt(1, 115)
+                                onRandomSurah(randomSurah)
+                            }
                         }
                     )
                 }
@@ -117,23 +90,62 @@ fun SurahScreen(
                     SurahContent(
                         surah = uiState.surah!!,
                         isAudioSectionExpanded = isAudioSectionExpanded,
-                        onAudioSectionExpandedChange = { isAudioSectionExpanded = it }
+                        onAudioSectionExpandedChange = remember { { expanded: Boolean -> isAudioSectionExpanded = expanded } }
                     )
                 }
             }
         }
     }
 
-    // Surah Selection Dialog
     if (showSurahSelector) {
         SurahSelectionDialog(
-            onDismiss = { showSurahSelector = false },
-            onSurahSelected = { number ->
-                onRandomSurah(number)
-                showSurahSelector = false
+            onDismiss = remember { { showSurahSelector = false } },
+            onSurahSelected = remember(onRandomSurah) {
+                { number: Int ->
+                    onRandomSurah(number)
+                    showSurahSelector = false
+                }
             }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SurahTopBar(
+    isRefreshing: Boolean,
+    onSurahSelectorClick: () -> Unit,
+    onRandomClick: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "refresh")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+
+    TopAppBar(
+        title = { Text("Quran Surah") },
+        actions = {
+            IconButton(onClick = onSurahSelectorClick) {
+                Icon(
+                    imageVector = Icons.Default.List,
+                    contentDescription = "Select Surah"
+                )
+            }
+            IconButton(onClick = onRandomClick) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Random Surah",
+                    modifier = Modifier.rotate(if (isRefreshing) rotation else 0f)
+                )
+            }
+        }
+    )
 }
 
 @Composable
@@ -170,17 +182,20 @@ private fun SurahSelectionDialog(
     onDismiss: () -> Unit,
     onSurahSelected: (Int) -> Unit
 ) {
+    val surahList = remember { (1..114).toList() }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Surah") },
         text = {
             LazyColumn {
-                items((1..114).toList()) { number ->
+                items(
+                    items = surahList,
+                    key = { it }
+                ) { number ->
                     ListItem(
                         headlineContent = { Text("Surah $number") },
-                        modifier = Modifier.clickable {
-                            onSurahSelected(number)
-                        }
+                        modifier = Modifier.clickable { onSurahSelected(number) }
                     )
                 }
             }
@@ -202,6 +217,10 @@ private fun SurahContent(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 }
+    }
+    
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -209,11 +228,11 @@ private fun SurahContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                SurahHeader(surah)
+            item(key = "header") {
+                SurahHeader(surah = surah)
             }
 
-            item {
+            item(key = "audio") {
                 ExpandableAudioSection(
                     audioReciters = surah.audio,
                     isExpanded = isAudioSectionExpanded,
@@ -222,8 +241,8 @@ private fun SurahContent(
             }
 
             items(
-                items = surah.english.indices.toList(),
-                key = { it }
+                count = surah.english.size,
+                key = { index -> "ayah_$index" }
             ) { index ->
                 AyahCard(
                     arabic = surah.arabic1[index],
@@ -235,17 +254,22 @@ private fun SurahContent(
             }
         }
 
-        // Add scroll to top button when scrolled down
-        if (listState.firstVisibleItemIndex > 0) {
+        AnimatedVisibility(
+            visible = showScrollToTop,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut(),
+            modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.BottomEnd)
+        ) {
             FloatingActionButton(
-                onClick = {
-                    coroutineScope.launch {
-                        listState.animateScrollToItem(0)
+                onClick = remember(coroutineScope, listState) {
+                    {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
                     }
-                },
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.BottomEnd)
+                }
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
@@ -264,7 +288,7 @@ private fun ExpandableAudioSection(
     onExpandedChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    var expanded by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
     var selectedReciter by remember { mutableStateOf<AudioReciter?>(null) }
 
     Card(
@@ -309,30 +333,30 @@ private fun ExpandableAudioSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it },
+                            expanded = dropdownExpanded,
+                            onExpandedChange = { dropdownExpanded = it },
                             modifier = Modifier.weight(1f)
                         ) {
                             OutlinedTextField(
                                 value = selectedReciter?.reciter ?: "Select Reciter",
                                 onValueChange = {},
                                 readOnly = true,
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                                 modifier = Modifier
                                     .menuAnchor()
                                     .fillMaxWidth()
                             )
 
                             ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false }
                             ) {
                                 audioReciters.values.forEach { reciter ->
                                     DropdownMenuItem(
                                         text = { Text(reciter.reciter) },
                                         onClick = {
                                             selectedReciter = reciter
-                                            expanded = false
+                                            dropdownExpanded = false
                                         }
                                     )
                                 }
@@ -340,10 +364,12 @@ private fun ExpandableAudioSection(
                         }
 
                         Button(
-                            onClick = {
-                                selectedReciter?.let { reciter ->
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reciter.url))
-                                    context.startActivity(intent)
+                            onClick = remember(selectedReciter, context) {
+                                {
+                                    selectedReciter?.let { reciter ->
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reciter.url))
+                                        context.startActivity(intent)
+                                    }
                                 }
                             },
                             enabled = selectedReciter != null,
@@ -524,4 +550,4 @@ fun ThreeDLoadingAnimation(modifier: Modifier = Modifier) {
             )
         }
     }
-} 
+}
